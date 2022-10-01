@@ -32,7 +32,6 @@ window.onload = function () {
   }
 
   //------------------------add---------------------------//
-
   function handleAdd(cell) {
     fetch(
       "https://pokeapi.co/api/v2/pokemon/" +
@@ -98,12 +97,12 @@ window.onload = function () {
   }
 
   function handleDelete(cell) {
+    let swapButton = cell.querySelector(".button");
     cell.removeChild(cell.querySelector("h1"));
     cell.removeChild(cell.querySelector("h3"));
     cell.removeChild(cell.querySelector("img"));
-    cell.querySelector(".button").innerHTML = "Add";
-    cell.querySelector(".button").class = "button";
-    cell.querySelector(".button").onclick = function () {
+    swapButton.innerHTML = "Add";
+    swapButton.onclick = function () {
       handleAdd(cell);
     };
     cell.removeChild(cell.querySelector(".deleteButton"));
@@ -118,27 +117,31 @@ window.onload = function () {
     })
     .then(() => {
       //------------------make random pokemon-------------------------//
-      for (let i = 1; i < cells.length - 2; i++) {
+      let fetches = [];
+      for (let i = 0; i < 3; i++) {
         let rndInt = Math.floor(Math.random() * 905) + 1;
-        fetch("https://pokeapi.co/api/v2/pokemon/" + rndInt)
-          .then((response) => response.json())
-          .then((data) => {
-            displayPokemonDetails(data, cells[i]);
-          })
-          .then(() => {
-            if (i === cells.length - 3) {
-              //------------------change to swap-------------------------//
-              for (let k = 0; k < cells.length; k++) {
-                addButtons[k].onclick = function () {
-                  handleAdd(cells[k]);
-                };
-                if (cells[k].children.length > 2) {
-                  toggleToSwap(addButtons[k]);
-                  displayDelButton(cells[k]);
-                }
-              }
-            }
-          });
+        fetches.push(fetch("https://pokeapi.co/api/v2/pokemon/" + rndInt));
       }
+      Promise.all(fetches)
+        .then((responses) => responses.map((response) => response.json()))
+        .then((responses) =>
+          Promise.all(responses).then((data) => {
+            for (let i = 1; i < 4; i++) {
+              displayPokemonDetails(data[i - 1], cells[i]);
+            }
+          })
+        )
+        .then(() => {
+          //------------------change to swap-------------------------//
+          for (let i = 0; i < cells.length; i++) {
+            addButtons[i].onclick = function () {
+              handleAdd(cells[i]);
+            };
+            if (cells[i].children.length > 2) {
+              toggleToSwap(addButtons[i]);
+              displayDelButton(cells[i]);
+            }
+          }
+        });
     });
 };
